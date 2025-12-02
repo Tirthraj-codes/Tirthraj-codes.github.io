@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Statistics Calculator</title>
+    <script type="text/javascript" async
+      src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/MathJax.js?config=TeX-MML-AM_CHTML">
+    </script>
+    <style>
+        /* Combined CSS with all animations and styling */
+        @keyframes pulse-glow {
+            0%, 100% { 
+                text-shadow: 0 0 5px #00bcd4, 0 0 10px #00bcd4, 0 0 20px rgba(0, 188, 212, 0.5); 
+            }
+            50% { 
+                text-shadow: 0 0 15px #00bcd4, 0 0 30px #00bcd4, 0 0 45px rgba(0, 188, 212, 0.8); 
+            }
+        }
+        
+        @keyframes slideIn {
+            from { 
+                transform: translateY(30px) rotateX(-10deg); 
+                opacity: 0; 
+                filter: blur(2px);
+            }
+            to { 
+                transform: translateY(0) rotateX(0); 
+                opacity: 1; 
+                filter: blur(0);
+            }
+        }
+        
+        @keyframes fadeIn {
+            from { 
+                opacity: 0; 
+                filter: hue-rotate(90deg);
+            }
+            to { 
+                opacity: 1; 
+                filter: hue-rotate(0);
+            }
+        }
+        
+        @keyframes buttonPress {
+            0% { transform: scale(1); }
+            50% { transform: scale(0.92); }
+            100% { transform: scale(1); }
+        }
+        
+        @keyframes scanline {
+            0% { background-position: 0 0; }
+            100% { background-position: 0 100vh; }
+        }
+        
+        body {
+            font-family: 'Courier New', 'Arial', sans-serif;
+            background-color: #121212;
+            color: #00bcd4;
+            margin: 0;
+            padding: 0;
+            text-align: center;
+            animation: fadeIn 1s ease-in-out;
+            position: relative;
+            overflow-x: hidden;
+        }
+        
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                to bottom,
+                transparent 95%,
+                rgba(0, 188, 212, 0.1) 96%
+            );
+            background-size: 100% 8px;
+            pointer-events: none;
+            z-index: 9999;
+            animation: scanline 4s linear infinite;
+            mix-blend-mode: overlay;
+        }
+        
+        .nav {
+            display: flex;
+            justify-content: center;
+            padding: 15px;
+            background: rgba(30, 30, 30, 0.85);
+            box-shadow: 0 4px 20px rgba(0, 188, 212, 0.5);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+            border-bottom: 1px solid rgba(0, 188, 212, 0.3);
+        }
+        
+        .nav a {
+            color: #00bcd4;
+            text-decoration: none;
+            margin: 0 20px;
+            font-size: 18px;
+            font-weight: bold;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            text-shadow: 0 0 8px #00bcd4;
+            position: relative;
+            padding: 5px 10px;
+        }
+        
+        .nav a::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: #00bcd4;
+            transition: width 0.3s ease;
+        }
+        
+        .nav a:hover {
+            transform: scale(1.15);
+            color: #00ffff;
+            text-shadow: 0 0 15px #00ffff;
+        }
+        
+        .container,
+        .content,
+        .input-box,
+        .result-box {
+            background: rgba(30, 30, 30, 0.85);
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 0 20px rgba(0, 188, 212, 0.3),
+                        0 0 40px rgba(0, 188, 212, 0.1);
+            width: 65%;
+            margin: 30px auto;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            animation: slideIn 0.8s ease-out;
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(0, 188, 212, 0.2);
+        }
+        
+        input[type="text"],
+        input {
+            background: rgba(44, 44, 44, 0.7);
+            color: #ffffff;
+            border: none;
+            padding: 14px;
+            border-radius: 8px;
+            width: 90%;
+            margin: 15px auto;
+            display: block;
+            font-size: 16px;
+            box-shadow: inset 0 0 10px rgba(0, 188, 212, 0.5),
+                        0 0 0 1px rgba(0, 188, 212, 0.3);
+            transition: all 0.3s ease;
+            font-family: 'Courier New', monospace;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #00bcd4, #008ba3);
+            color: #121212;
+            cursor: pointer;
+            padding: 14px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            width: 90%;
+            margin-top: 15px;
+            box-shadow: 0 0 15px rgba(0, 188, 212, 0.5),
+                        0 5px 10px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        
+        button:hover {
+            background: linear-gradient(135deg, #00ffff, #00bcd4);
+            transform: scale(1.05);
+            box-shadow: 0 0 25px rgba(0, 255, 255, 0.7),
+                        0 8px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        .result {
+            font-weight: bold;
+            font-size: 18px;
+            color: #00ffff;
+            text-shadow: 0 0 10px rgba(0, 255, 255, 0.8);
+            animation: fadeIn 1.5s ease-in;
+        }
+        
+        h2, h3, h4, h1, label {
+            text-shadow: 0 0 15px rgba(0, 188, 212, 0.8);
+            animation: pulse-glow 3s infinite ease-in-out;
+        }
+        
+        /* Results animation styles */
+        .results-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 20px;
+            background: rgba(30, 30, 30, 0.7);
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 3px solid #00bcd4;
+            box-shadow: 0 0 15px rgba(0, 188, 212, 0.3);
+        }
+
+        .result-item {
+            opacity: 0;
+            transform: translateY(20px);
+            padding: 10px 15px;
+            background: rgba(40, 40, 40, 0.5);
+            border-radius: 6px;
+            transition: all 0.8s ease-out;
+        }
+
+        .result-item.mean {
+            border-left: 3px solid #00bcd4;
+        }
+
+        .result-item.median {
+            border-left: 3px solid #00ffaa;
+        }
+
+        .result-item.mode {
+            border-left: 3px solid #ff00aa;
+        }
+
+        .result-item.variance {
+            border-left: 3px solid #aa00ff;
+        }
+
+        .result-item.stddev {
+            border-left: 3px solid #ffaa00;
+        }
+
+        .result-item.total-freq {
+            border-left: 3px solid #00ffff;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <div class="nav">
+        <a class="nav1" href="#home">Home</a>
+        <a class="nav1" href="#normalData">Normal Data</a>
+        <a class="nav1" href="#normalDataFi">Normal Data With Fi</a>
+        <a class="nav1" href="#groupData">Group Data</a>
+        <a class="nav1" href="#formulas">Formulas</a>
+    </div>
+
+    <!-- Home Section -->
+    <div id="home" class="content">
+        <h1>Welcome to the Statistics Calculator</h1>
+        <p>This tool helps you calculate Mean, Median, Mode, Variance, and Standard Deviation.</p>
+        <p>Select a calculator type from the navigation above.</p>
+
+        <h1>Types of Statistical Data</h1>
+        
+        <h2>1. Normal Data</h2>
+        <p><strong>Definition:</strong> A simple list of values (ungrouped data) where each value appears once.</p>
+        <div class="formula">Mean = (Σx) / n</div>
+        <div class="example">
+            Data: 5, 10, 15, 20, 25<br>
+            Mean = (5 + 10 + 15 + 20 + 25) / 5 = 75 / 5 = <strong>15</strong>
+        </div>
+
+        <h2>2. Normal Data with Frequency (fi)</h2>
+        <p><strong>Definition:</strong> Each value is repeated a certain number of times (frequency).</p>
+        <div class="formula">Mean = (Σf × x) / Σf</div>
+        <div class="example">
+            Values (x): 2, 4, 6<br>
+            Frequency (f): 3, 2, 1<br>
+            Σf × x = (2×3) + (4×2) + (6×1) = 6 + 8 + 6 = 20<br>
+            Σf = 3 + 2 + 1 = 6<br>
+            Mean = 20 / 6 = <strong>3.33</strong>
+        </div>
+
+        <h2>3. Grouped Data</h2>
+        <p><strong>Definition:</strong> Data is presented in class intervals with corresponding frequencies.</p>
+        <p class="note">Midpoint (m) = (Lower limit + Upper limit) / 2</p>
+        <div class="formula">Mean = (Σf × m) / Σf</div>
+        <div class="example">
+            Class Intervals: 0–10, 10–20, 20–30<br>
+            Frequencies: 2, 3, 5<br>
+            Midpoints (m): 5, 15, 25<br>
+            f × m = (2×5) + (3×15) + (5×25) = 10 + 45 + 125 = 180<br>
+            Σf = 2 + 3 + 5 = 10<br>
+            Mean = 180 / 10 = <strong>18</strong>
+        </div>
+
+        <h1>Statistics Concepts</h1>
+        
+        <h2>1. Mean (Average)</h2>
+        <p><strong>Definition:</strong> Sum of all values divided by the number of values.</p>
+        <div class="formula">Mean = Σx / n</div>
+        <div class="example">Example: (4 + 7 + 8 + 6 + 5) / 5 <br>= 30 / 5 <br>= <strong>6</strong></div>
+
+        <h2>2. Median</h2>
+        <p><strong>Definition:</strong> The middle value when data is sorted.</p>
+        <div class="example">Example (odd): 3, 5, 7, 9, 11 <br>→ Median = <strong>7</strong></div>
+        <div class="example">Example (even): 4, 6, 8, 10 <br>→ Median = (6 + 8)/2 = <strong>7</strong></div>
+
+        <h2>3. Mode</h2>
+        <p><strong>Definition:</strong> The value that appears most frequently.</p>
+        <div class="example">Example: 2, 3, 4, 3, 5, 3 <br>→ Mode = <strong>3</strong></div>
+
+        <h2>4. Variance</h2>
+        <p><strong>Definition:</strong> Average of squared differences from the mean.</p>
+        <div class="formula">Variance (s²) = Σ(xᵢ - x̄)² / (n - 1)</div>
+        <div class="example">
+            Data: 2, 4, 6<br>
+            Mean = 4<br>
+            Variance = [(2-4)² + (4-4)² + (6-4)²] / 2 <br>= (4 + 0 + 4) / 2 <br>= <strong>4</strong>
+        </div>
+
+        <h2>5. Standard Deviation</h2>
+        <p><strong>Definition:</strong> Square root of variance.</p>
+        <div class="formula">Standard Deviation (s) = √Variance</div>
+        <div class="example">Variance = 4 <br>→ Standard Deviation = √4 = <strong>2</strong></div>
+        
+
+    </div>
+
+    <!-- Normal Data Calculator -->
+    <div id="normalData" class="content" style="display: none;">
+        <h2>Statistics Calculator (No Frequency)</h2>
+        <div class="input-box">
+            <p>Enter numbers separated by commas:</p>
+            <input type="text" id="numbers" placeholder="e.g., 2,5,1,8">
+            <button onclick="calculateStats()">Calculate</button>
+        </div>
+        <div id="normalDataResults"></div>
+    </div>
+
+    <!-- Normal Data with Frequency Calculator -->
+    <div id="normalDataFi" class="content" style="display: none;">
+        <h2>Normal Data - Mean, Median, Mode</h2>
+        <div class="container">
+            <p>Enter numbers separated by commas:</p>
+            <input type="text" id="numbersFi" placeholder="e.g., 1,2,2,3,4">
+            <p>Enter corresponding frequencies separated by commas:</p>
+            <input type="text" id="frequenciesFi" placeholder="e.g., 1,2,1,1,1">
+            <button onclick="calculateWithFrequency()">Calculate</button>
+        </div>
+        <div id="frequencyDataResults"></div>
+    </div>
+
+    <!-- Grouped Data Calculator -->
+    <div id="groupData" class="content" style="display: none;">
+        <h2>Grouped Data Calculator</h2>
+        <div class="input-box">
+            <p>Enter class intervals (e.g., 10-20,20-30,30-40):</p>
+            <input type="text" id="classIntervals" placeholder="e.g., 10-20,20-30,30-40">
+            <p>Enter corresponding frequencies separated by commas:</p>
+            <input type="text" id="frequenciesGr" placeholder="e.g., 5,10,8">
+            <button onclick="calculateGroupedStats()">Calculate</button>
+        </div>
+        <div id="groupedDataResults"></div>
+    </div>
+
+    <!-- Formulas Section -->
+    <div id="formulas" class="content" style="display: none;">
+        <h1>Statistics Formulas</h1>
+        <div class="formula">
+            <h3>Arithmetic Mean</h3>
+            <p title="Mean without frequency">Without Frequency: \( \bar{x} = \frac{\sum x}{n} \)</p>
+            <p title="Mean with frequency">With Frequency: \( \bar{x} = \frac{\sum fx}{\sum f} \)</p>
+        </div>
+        <div class="formula">
+            <h3>Geometric Mean</h3>
+            <p title="Geometric mean without frequency">Without Frequency: \( GM = \sqrt[n]{x_1 \cdot x_2 \cdot ... \cdot x_n} \)</p>
+            <p title="Geometric mean with frequency">With Frequency: \( GM = \sqrt[\sum f]{x_1^{f_1} \cdot x_2^{f_2} \cdot ... \cdot x_n^{f_n}} \)</p>
+        </div>
+        <div class="formula">
+            <h3>Harmonic Mean</h3>
+            <p title="Harmonic mean without frequency">Without Frequency: \( HM = \frac{n}{\sum \frac{1}{x}} \)</p>
+            <p title="Harmonic mean with frequency">With Frequency: \( HM = \frac{\sum f}{\sum \frac{f}{x}} \)</p>
+        </div>
+        <div class="formula">
+            <h3>Median</h3>
+            <p title="Median when data count is odd">Without Frequency (Odd): \( Median = x_{(n+1)/2} \)</p>
+            <p title="Median when data count is even">Without Frequency (Even): \( Median = \frac{x_{n/2} + x_{(n/2)+1}}{2} \)</p>
+            <p title="Median for grouped data">With Frequency: \( Median = L + \frac{\frac{N}{2} - CF}{f} \times h \)</p>
+        </div>
+        <div class="formula">
+            <h3>Mode</h3>
+            <p title="Mode for ungrouped data">Without Frequency: The most frequently occurring value.</p>
+            <p title="Mode for grouped data">With Frequency: \( Mode = L + \frac{f_1 - f_0}{2f_1 - f_0 - f_2} \times h \)</p>
+        </div>
+        <div class="formula">
+            <h3>Variance</h3>
+            <p title="Variance without frequency">Without Frequency: \( \sigma^2 = \frac{\sum (x - \bar{x})^2}{n} \)</p>
+            <p title="Variance with frequency">With Frequency: \( \sigma^2 = \frac{\sum f(x - \bar{x})^2}{\sum f} \)</p>
+        </div>
+        <div class="formula">
+            <h3>Standard Deviation</h3>
+            <p title="Standard deviation without frequency">Without Frequency: \( \sigma = \sqrt{\frac{\sum (x - \bar{x})^2}{n}} \)</p>
+            <p title="Standard deviation with frequency">With Frequency: \( \sigma = \sqrt{\frac{\sum f(x - \bar{x})^2}{\sum f}} \)</p>
+        </div>
+    </div>
+
+    <script>
+        // Navigation between sections
+        document.querySelectorAll('.nav a').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const targetId = this.getAttribute('href').substring(1);
+                
+                // Hide all content sections
+                document.querySelectorAll('.content').forEach(section => {
+                    section.style.display = 'none';
+                });
+                
+                // Show the selected section
+                document.getElementById(targetId).style.display = 'block';
+                
+                // Update active nav link
+                document.querySelectorAll('.nav a').forEach(navLink => {
+                    navLink.classList.remove('active');
+                });
+                this.classList.add('active');
+                
+                // Scroll to top
+                window.scrollTo(0, 0);
+            });
+        });
+
+        // Show home section by default
+        document.getElementById('home').style.display = 'block';
+        document.querySelector('.nav a').classList.add('active');
+
+        // Helper to animate results appearing
+        function showResultsWithAnimation(containerId) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            
+            // Show them sequentially
+            const resultItems = container.querySelectorAll('.result-item');
+            resultItems.forEach((item, index) => {
+                setTimeout(() => {
+                    item.style.opacity = '1';
+                    item.style.transform = 'translateY(0)';
+                }, index * 150);
+            });
+        }
+
+        // Normal Data Calculator
+        function calculateStats() {
+            let input = document.getElementById("numbers").value;
+            if (!input) return;
+
+            let numbers = input.split(',').map(Number).filter(n => !isNaN(n)).sort((a, b) => a - b);
+            let n = numbers.length;
+            if (n === 0) return;
+
+            let mean = numbers.reduce((a, b) => a + b, 0) / n;
+
+            let median = 0;
+            if (n % 2 === 0) {
+                let mid1 = numbers[n / 2 - 1];
+                let mid2 = numbers[n / 2];
+                median = (mid1 + mid2) / 2;
+            } else {
+                median = numbers[Math.floor(n / 2)];
+            }
+
+            let freq = {};
+            numbers.forEach(num => freq[num] = (freq[num] || 0) + 1);
+            let maxFreq = Math.max(...Object.values(freq));
+            let modes = Object.keys(freq).filter(key => freq[key] === maxFreq);
+            let mode = (modes.length === n) ? "No mode" : modes.join(", ");
+
+            let variance = numbers.reduce((sum, x) => sum + Math.pow(x - mean, 2), 0) / n;
+            let stdDeviation = Math.sqrt(variance);
+
+            // Create results container with animation-ready items
+            const resultsHTML = `
+                <div class="results-container" id="normalDataResults">
+                    <div class="result-item mean">
+                        <strong>Mean:</strong> ${mean.toFixed(2)}
+                    </div>
+                    <div class="result-item median">
+                        <strong>Median:</strong> ${median.toFixed(2)}
+                    </div>
+                    <div class="result-item mode">
+                        <strong>Mode:</strong> ${mode}
+                    </div>
+                    <div class="result-item variance">
+                        <strong>Variance:</strong> ${variance.toFixed(2)}
+                    </div>
+                    <div class="result-item stddev">
+                        <strong>Standard Deviation:</strong> ${stdDeviation.toFixed(2)}
+                    </div>
+                </div>
+            `;
+
+            // Update the content
+            document.getElementById("normalDataResults").innerHTML = resultsHTML;
+            
+            // Trigger the animation
+            showResultsWithAnimation("normalDataResults");
+        }
+
+        // Normal Data with Frequency Calculator
+        function calculateWithFrequency() {
+            const numbersInput = document.getElementById('numbersFi').value;
+            const frequencyInput = document.getElementById('frequenciesFi').value;
+            const numbers = numbersInput.split(',').map(Number);
+            const frequencies = frequencyInput.split(',').map(Number);
+            const resultBox = document.getElementById('frequencyDataResults');
+
+            if (numbers.length !== frequencies.length) {
+                resultBox.innerHTML = `<span style="color: red; font-weight: bold;">Error: The number of values and frequencies must be equal.</span>`;
+                return;
+            }
+
+            let totalFrequency = 0;
+            let sum = 0;
+            const frequencyMap = {};
+            const data = [];
+
+            for (let i = 0; i < numbers.length; i++) {
+                sum += numbers[i] * frequencies[i];
+                totalFrequency += frequencies[i];
+                for (let j = 0; j < frequencies[i]; j++) {
+                    data.push(numbers[i]);
+                }
+                frequencyMap[numbers[i]] = (frequencyMap[numbers[i]] || 0) + frequencies[i];
+            }
+
+            data.sort((a, b) => a - b);
+            const mean = (sum / totalFrequency).toFixed(2);
+
+            let median;
+            const mid = Math.floor(data.length / 2);
+            if (data.length % 2 === 0) {
+                median = ((data[mid - 1] + data[mid]) / 2).toFixed(2);
+            } else {
+                median = data[mid].toFixed(2);
+            }
+
+            let maxFreq = 0;
+            let mode = [];
+            for (const num in frequencyMap) {
+                if (frequencyMap[num] > maxFreq) {
+                    maxFreq = frequencyMap[num];
+                    mode = [num];
+                } else if (frequencyMap[num] === maxFreq) {
+                    mode.push(num);
+                }
+            }
+            mode = mode.length === data.length ? 'No mode' : mode.join(', ');
+
+            let variance = 0;
+            for (let i = 0; i < numbers.length; i++) {
+                variance += frequencies[i] * Math.pow(numbers[i] - mean, 2);
+            }
+            variance = (variance / totalFrequency).toFixed(2);
+            const stdDeviation = Math.sqrt(variance).toFixed(2);
+
+            resultBox.innerHTML = `
+                <div class="results-container" id="frequencyDataResults">
+                    <div class="result-item mean">
+                        <strong>Mean:</strong> ${mean}
+                    </div>
+                    <div class="result-item median">
+                        <strong>Median:</strong> ${median}
+                    </div>
+                    <div class="result-item mode">
+                        <strong>Mode:</strong> ${mode}
+                    </div>
+                    <div class="result-item variance">
+                        <strong>Variance:</strong> ${variance}
+                    </div>
+                    <div class="result-item stddev">
+                        <strong>Standard Deviation:</strong> ${stdDeviation}
+                    </div>
+                    <div class="result-item total-freq">
+                        <strong>Total Frequency:</strong> ${totalFrequency}
+                    </div>
+                </div>
+            `;
+
+            showResultsWithAnimation("frequencyDataResults");
+        }
+
+        // Grouped Data Calculator
+        function calculateGroupedStats() {
+            const intervals = document.getElementById("classIntervals").value.split(",");
+            const frequencies = document.getElementById("frequenciesGr").value.split(",").map(Number);
+            const resultBox = document.getElementById("groupedDataResults");
+            if (intervals.length !== frequencies.length) {
+                resultBox.innerHTML = `<span style="color: red; font-weight: bold;">Error: The number of class intervals and frequencies must be equal.</span>`;
+                return;
+            }
+
+            let midpoints = intervals.map(interval => {
+                let [low, high] = interval.split("-").map(Number);
+                return (low + high) / 2;
+            });
+
+            let totalFreq = frequencies.reduce((a, b) => a + b, 0);
+            let mean = midpoints.reduce((sum, m, i) => sum + m * frequencies[i], 0) / totalFreq;
+            let variance = midpoints.reduce((sum, m, i) => sum + frequencies[i] * Math.pow(m - mean, 2), 0) / totalFreq;
+            let stdDeviation = Math.sqrt(variance);
+
+            let cumulativeFreq = 0;
+            let medianClassIndex = 0;
+            for (let i = 0; i < frequencies.length; i++) {
+                cumulativeFreq += frequencies[i];
+                if (cumulativeFreq >= totalFreq / 2) {
+                    medianClassIndex = i;
+                    break;
+                }
+            }
+            let cfBeforeMedian = frequencies.slice(0, medianClassIndex).reduce((a, b) => a + b, 0);
+            let [L, H] = intervals[medianClassIndex].split("-").map(Number);
+            let f = frequencies[medianClassIndex];
+            let h = H - L;
+            let median = L + ((totalFreq / 2 - cfBeforeMedian) / f) * h;
+
+            let modalClassIndex = frequencies.indexOf(Math.max(...frequencies));
+            let f1 = frequencies[modalClassIndex];
+            let f0 = frequencies[modalClassIndex - 1] || 0;
+            let f2 = frequencies[modalClassIndex + 1] || 0;
+            let [Lmod, Hmod] = intervals[modalClassIndex].split("-").map(Number);
+            let hmod = Hmod - Lmod;
+            let mode = Lmod + ((f1 - f0) / ((2 * f1) - f0 - f2)) * hmod;
+
+            resultBox.innerHTML = `
+                <div class="results-container" id="groupedDataResults">
+                    <div class="result-item mean">
+                        <strong>Mean:</strong> ${mean.toFixed(2)}
+                    </div>
+                    <div class="result-item median">
+                        <strong>Median:</strong> ${median.toFixed(2)}
+                    </div>
+                    <div class="result-item mode">
+                        <strong>Mode:</strong> ${mode.toFixed(2)}
+                    </div>
+                    <div class="result-item variance">
+                        <strong>Variance:</strong> ${variance.toFixed(2)}
+                    </div>
+                    <div class="result-item stddev">
+                        <strong>Standard Deviation:</strong> ${stdDeviation.toFixed(2)}
+                    </div>
+                </div>
+            `;
+
+            showResultsWithAnimation("groupedDataResults");
+        }
+    </script>
+</body>
+</html>
